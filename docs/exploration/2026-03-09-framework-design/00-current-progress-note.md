@@ -89,3 +89,30 @@
 2. 执行前先激活环境：`conda activate a3s_code`。
 3. 建议先做环境自检：`python -c "import a3s_code,sys; print(sys.executable); print(getattr(a3s_code, '__version__', 'unknown'))"`。
 4. 非交互执行可用：`conda run -n a3s_code python <script.py>`。
+
+---
+
+## 9. 实施进度更新（2026-03-09）
+
+### 9.1 本轮已完成
+
+1. Git 接入完成：`main` 初始化提交并推送；已创建实现分支 `feat/step1-adapter-normalizer`。
+2. Step 1 实施计划已落盘：`docs/plans/2026-03-09-step1-adapter-event-normalizer-implementation-plan.md`。
+3. 已进入下一步（Step 1 实装）并完成：
+   - `T1` 最小代码骨架（`models/a3s_adapter/event_normalizer/jsonl_sink`）。
+   - `T2` 失败测试先行（RED）。
+   - `T3` 最小实现转绿（GREEN）。
+
+### 9.2 本轮验证结果（真实 API）
+
+1. 测试命令（conda 环境）：`conda run -n a3s_code --no-capture-output python -u test/test_eventbus.py`（`timeout 40s` 包裹）。
+2. 已验证通过：
+   - Hook 注册/注销、matcher/config 能力可用（11 类事件可注册）。
+   - Lane handler / Queue 统计 API 可调用。
+   - Orchestrator / SubAgent API 可调用并返回状态。
+3. 未通过项：
+   - Streaming + Hooks 集成在本轮超时窗口内未返回（`Part 4` 在 prompt 后超时）。
+4. 回流 issue：
+   - `ISSUE-20260309-STEP1-REALAPI-STREAM-TIMEOUT`
+   - 现象：`session.stream()` 在 40s/150s 超时窗口内无返回事件。
+   - 回流方向：排查模型端连通性、`test/all_config.hcl` 默认模型可用性、网络抖动与超时策略。
