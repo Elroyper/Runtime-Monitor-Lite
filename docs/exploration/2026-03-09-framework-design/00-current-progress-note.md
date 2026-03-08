@@ -80,3 +80,12 @@
 4. 提交信息建议包含：`step`、`scenario_id`、`gate`（如：`step1 S1-S3 gateA-prep`）。
 5. 若验证失败，先提交失败样本与回流 issue，再进行修正提交，确保审计链连续。
 6. 首次接入建议先创建初始化提交并推送 `main`，再开始 Step 级小步提交。
+
+---
+
+## 8. 运行环境补充（真实 API 验证）
+
+1. Step 1 及后续真实 API 验证统一使用 conda 环境：`a3s_code`。
+2. 执行前先激活环境：`conda activate a3s_code`。
+3. 建议先做环境自检：`python -c "import a3s_code,sys; print(sys.executable); print(getattr(a3s_code, '__version__', 'unknown'))"`。
+4. 非交互执行可用：`conda run -n a3s_code python <script.py>`。
