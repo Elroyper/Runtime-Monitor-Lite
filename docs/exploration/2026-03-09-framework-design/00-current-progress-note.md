@@ -6,7 +6,7 @@
 
 `R5 阻断项修复完成 -> Phase 1 v1.4-frozen 与 master v0.3-frozen 已冻结`
 
-尚未进入代码实现阶段（按流程约束）。
+已进入代码实现阶段（Step 1 按 TDD 与真实 API 验证并行推进）。
 
 ---
 
@@ -25,18 +25,18 @@
 
 `调研 -> 设计文档 -> 循环复核修改 -> 逐步代码实现 -> 每步实现都进行基于真实 API 的验证`
 
-当前我们正处于“冻结后实现准备”阶段。
+当前我们正处于“Step 1 实施与验证”阶段。
 
 ---
 
 ## 4. 下一步工作（实施导向）
 
-1. 初始化 Git 工作区并绑定远程仓库：`git@github.com:Elroyper/Runtime-Monitor-Lite.git`（当前目录尚未检测到 `.git`）。
-2. 进入实现准备：按 `04` 的 `Gate-A/Gate-B/Gate-C` 拆解执行计划。
-3. 执行真实 API 验证 `S1-S12`，并固化 `validation_report.md`。
-4. 复核跨表审计键（`rule_hit_refs/gate_decision_id/provenance_chain_id/decision_attempt`）回放一致性。
-5. 变更控制：任何策略变更先更新 `04` 冻结文档再进入实现。
-6. 输出实施前风险清单与回滚预案。
+1. 修复 Step 1 真实 API `session.stream()` 超时阻断项（模型连通性/默认 provider/超时窗口）。
+2. 基于 `scripts/validation/run_step1_real_api.py` 重跑并产出非空 `events.jsonl`。
+3. 执行 `scripts/validation/calc_step1_metrics.py`，更新 `metrics_summary.json` 与 `validation_report.md`。
+4. 继续 Step 2（trace builder）前，先确认 Step 1 的 `event_capture_rate` 达到 Gate-A 前置口径。
+5. 复核跨表审计键（`rule_hit_refs/gate_decision_id/provenance_chain_id/decision_attempt`）回放一致性。
+6. 变更控制：任何策略变更先更新 `04` 冻结文档再进入实现。
 
 ---
 
@@ -122,3 +122,37 @@
 1. 已完成“普通客户视角”说明同步：覆盖最终预期效果、三阶段能力（observe/approval/block）与使用方式。
 2. 本次 Git 保存目标：将进度文档更新单独提交，确保“沟通说明 -> 进度记录 -> 版本留痕”闭环。
 3. 关联分支：`feat/step1-adapter-normalizer`（持续小步提交）。
+
+### 9.4 Step1 代码推进（T4/T5，2026-03-09）
+
+1. 已完成 `T4`：
+   - 增强 `A3SAdapter`（默认 hook 注册、stream 采集统计、可配置 stop/max_events）。
+   - 增强 `JsonlSink`（自动建文件、`default=str` 序列化降级）。
+   - 新增真实采集脚本：`scripts/validation/run_step1_real_api.py`。
+2. 已完成 `T5`：
+   - 新增指标脚本：`scripts/validation/calc_step1_metrics.py`。
+   - 新增验证说明：`docs/validation/README.md`。
+3. 单元测试结果：
+   - `conda run -n a3s_code --no-capture-output python -m unittest discover -s tests/step1 -v` 通过（12/12）。
+4. 本轮真实 API 结果：
+   - run_id：`run_20260309_124225`
+   - 结果：`session.stream()` 在 90s 超时，无事件采集（`events.jsonl` 空文件）。
+   - 产物：`run_meta.json`、`metrics_summary.json`、`validation_report.md` 已落盘。
+   - 回流 issue：`ISSUE-20260309-STEP1-REALAPI-STREAM-TIMEOUT`（持续开放）。
+
+### 9.5 Step1 超时阻断修复与验证闭环（2026-03-09）
+
+1. 已完成阻断修复（保持 `observe_only` 不变）：
+   - `A3SAdapter.collect_stream` 新增首事件/逐事件 timeout 策略，避免 `session.stream()` 长时间无事件盲等。
+   - `run_step1_real_api.py` 新增最小 prompt 探测路径（`probe_prompt`）与模型候选探测（按可达性选择）。
+   - 默认清理代理环境变量（`HTTP_PROXY/HTTPS_PROXY/ALL_PROXY` 等），规避本地失效代理导致的连通性阻断；可用 `--keep-proxy-env` 保留。
+2. 真实 API 重跑结果：
+   - run_id：`run_20260309_150054`
+   - 结果：`status=passed`，`events/events.jsonl` 非空（6 条事件），`stream timeout` 阻断解除。
+   - 关键证据：`run_meta.json` 记录 `model_selection.probe_attempts` 与 `timeout_policy`，可审计追溯。
+3. 本轮指标与 gate：
+   - `calc_step1_metrics.py` 已更新 `metrics_summary.json` 与 `validation_report.md`。
+   - `phase1_gate: fail`（非 timeout 原因），回流项已在报告中明确：
+     - `ISSUE-STEP1-METRIC-EVENT-CAPTURE-RATE`
+     - `ISSUE-STEP1-METRIC-CANONICAL-MAP-RATE`
+     - `ISSUE-STEP1-METRIC-REQUIRED-FIELDS`
