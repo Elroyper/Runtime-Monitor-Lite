@@ -11,10 +11,14 @@ class JsonlSink:
     def __init__(self, file_path: str | Path) -> None:
         self.file_path = Path(file_path)
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        self.touch()
+
+    def touch(self) -> None:
+        self.file_path.touch(exist_ok=True)
 
     def write_event(self, event: EventRecord) -> None:
         self.write_dict(event.to_dict())
 
     def write_dict(self, payload: dict[str, Any]) -> None:
         with self.file_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+            f.write(json.dumps(payload, ensure_ascii=False, default=str) + "\n")
