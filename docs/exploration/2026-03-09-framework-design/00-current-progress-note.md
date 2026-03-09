@@ -116,3 +116,9 @@
    - `ISSUE-20260309-STEP1-REALAPI-STREAM-TIMEOUT`
    - 现象：`session.stream()` 在 40s/150s 超时窗口内无返回事件。
    - 回流方向：排查模型端连通性、`test/all_config.hcl` 默认模型可用性、网络抖动与超时策略。
+
+### 9.3 协作与提交记录（2026-03-09）
+
+1. 已完成“普通客户视角”说明同步：覆盖最终预期效果、三阶段能力（observe/approval/block）与使用方式。
+2. 本次 Git 保存目标：将进度文档更新单独提交，确保“沟通说明 -> 进度记录 -> 版本留痕”闭环。
+3. 关联分支：`feat/step1-adapter-normalizer`（持续小步提交）。
